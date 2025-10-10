@@ -8,7 +8,6 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   const data = await req.json();
-  console.log('Evento recebido do n8n:', data);
 
   let message: string = 'Aguardando conexão ...';
   let connected = false;
@@ -26,7 +25,6 @@ export async function POST(req: Request) {
     .upsert({ key: data.key, connected, message });
 
   if (error) {
-    console.error('Erro ao salvar evento no Supabase:', error);
     return NextResponse.json({ status: 'error' }, { status: 500 });
   }
 
@@ -51,13 +49,11 @@ export async function DELETE(req: Request) {
       .eq('key', key);
 
     if (error) {
-      console.error('Erro ao deletar conexão:', error);
       return NextResponse.json({ message: 'Erro ao deletar conexão' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Conexão deletada com sucesso' });
-  } catch (err) {
-    console.error('Erro interno ao deletar conexão:', err);
+  } catch  {
     return NextResponse.json({ message: 'Erro interno do servidor' }, { status: 500 });
   }
 }
