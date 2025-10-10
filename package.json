@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev -p 4000",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.75.0",
+    "@upstash/redis": "^1.35.5",
     "axios": "^1.12.2",
     "next": "15.5.4",
     "react": "19.1.0",
