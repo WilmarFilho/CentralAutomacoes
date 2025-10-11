@@ -7,6 +7,15 @@ const supabase = createClient(
 );
 
 export async function POST(req: Request) {
+  // Verificar header internalKey
+  const internalKey = req.headers.get('internalKey');
+  if (!internalKey || internalKey !== process.env.INTERNAL_KEY) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Invalid internal key' }, 
+      { status: 401 }
+    );
+  }
+
   const data = await req.json();
 
   let message: string = 'Aguardando conexão ...';
