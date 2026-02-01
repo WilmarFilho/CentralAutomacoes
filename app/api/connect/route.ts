@@ -9,6 +9,7 @@ const supabase = createClient(
 );
 
 export async function POST(req: Request) {
+ 
   try {
     const { key, number } = await req.json();
 
@@ -19,13 +20,14 @@ export async function POST(req: Request) {
     if (!agent)
       return NextResponse.json({ errorMessage: 'Key inválida, consulte nosso suporte' }, { status: 401 });
 
-
     // Verificar se a instância já existe na Evolution API
     try {
       const instanceResponse = await axios.get(
         `${process.env.CREATE_CONNECTION_ENDPOINT}instance/fetchInstances?instanceName=${agent.key}`,
         { headers: { apikey: process.env.EVOLUTION_API_KEY } }
       );
+
+      console.log('instanceResponse:', instanceResponse.data);
 
       // Verifica se a resposta contém dados da instância
       if (instanceResponse.data) {
