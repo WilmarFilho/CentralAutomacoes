@@ -1,0 +1,1101 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.github/workflows/deploy.yml
+.gitignore
+.ssh/github_actions_rsa
+.ssh/github_actions_rsa.pub
+app/api/connect/route.ts
+app/api/events/route.ts
+app/api/webhook/route.ts
+app/globals.css
+app/layout.tsx
+app/page.module.css
+app/page.tsx
+docker-compose.yml
+Dockerfile
+eslint.config.mjs
+lib/agents.ts
+next.config.ts
+package.json
+postcss.config.mjs
+public/arrow.webp
+public/bg.png
+public/key.svg
+public/logo.png
+public/logo.svg
+public/rel.webp
+README.md
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".github/workflows/deploy.yml">
+name: Deploy Central Automacoes
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # 1. Entrar na pasta do projeto
+            mkdir -p ~/CentralAutomacoes
+            cd ~/CentralAutomacoes
+            
+            # 2. Sincronizar com o commit atual
+            if [ ! -d ".git" ]; then
+              echo "Repositório não encontrado localmente. Clonando..."
+              find . -mindepth 1 -delete
+              git clone https://github.com/WilmarFilho/CentralAutomacoes.git .
+            else
+              echo "Sincronizando repositório existente..."
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            # 3. Docker Compose (Sempre com hífen conforme solicitado)
+            # Nota: Certifique-se de ter o Alias ou a versão V1 instalada na VPS
+            docker-compose down
+            docker-compose up -d --build
+
+            # 4. Limpeza de imagens antigas para poupar espaço
+            docker image prune -f
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path=".ssh/github_actions_rsa.pub">
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQD3gCC/Dgg+wHHOczVzz4ak5cwOSNwwvhdbGVd5p1PNP61kscgj7srigEo2Taek+5SsMCjb3MVGjwOAytwBHBm5qc7xVNN0CNLkBGeJzMIa8+jZ77M63TwL2maNuQ8pAqfRHP8ICtIaltzgMYVsFiDEIoFkNcCSALIkiZP01LOI7J/xpqvavy189PlLyJxKSkSc6qmaabAffiGV7lGbVvRbe97i80SVMfrD3z+tZuZEdNR1/nHkEwz0FmntpzmnmEgvf7kQFKVGezqTs69paiSsvlZw17+PihivFBs7mccT3wGs0mPYeh2MaEpVP/w7T8uXgxxhEvrf2j/TN3vlPX86UX620uuq8/rDUxjZ1XrGUeJ661reghtHQf2pGVsDzqvr1eZvqiblWrpK0CzT+Yn3LqNLW1+pG+gzUV0IbY9cMoDyByVKn9x5zDwWhh94AlfxdpuVFqQOBd5ROfo3Vxo+CGtOXgDcQH9caQQhS6amVxEXmZWCJocmv2lDPg1YkMMg9GMpA0Q4ueY6Bq+rHqk6zj3jChM/DVbhWsQLjvsiKndJ2RTHIXa6lRecVtVSzKQBXGsncpQoPZ7KI1yHkv2b07ZoZhytQFzWK6bzY/qtInn9YkAzCicvcmFXx/kLNCSQRdXiPH42gghiqEieYp+6wZbOs0nbdDHyOBN/+geQWQ== fernanda@DESKTOP-C5866E6
+</file>
+
+<file path="app/api/events/route.ts">
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
+
+export async function GET(req: NextRequest) {
+  const key = req.nextUrl.searchParams.get('key');
+  if (!key) return NextResponse.json({ error: 'Key obrigatória' }, { status: 400 });
+
+  const { data, error } = await supabase
+    .from('connection_state')
+    .select('*')
+    .eq('key', key)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+
+  if (error) return NextResponse.json({ error }, { status: 500 });
+
+  return NextResponse.json(data?.[0] || null);
+}
+</file>
+
+<file path="app/page.module.css">
+.submit {
+    background-color: rgba(255, 255, 255, 0.283);
+    width: 100%;
+    border-radius: 12px;
+    display: flex;
+    gap: 8px;
+    padding: 12px 0;
+    justify-content: center;
+    align-items: center;
+    text-transform: uppercase;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    font-family: var(--font-k2d);
+    color: #ffffffb1;
+    cursor:not-allowed;
+}
+
+.submitActive {
+    background-color: #52F2B8;
+    width: 100%;
+    border-radius: 12px;
+    display: flex;
+    gap: 8px;
+    padding: 12px 0;
+    justify-content: center;
+    align-items: center;
+    text-transform: uppercase;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    font-family: var(--font-k2d);
+    color: #ffffff;
+}
+
+.iconSubmit {
+    width: 26px;
+    height: 26px;
+}
+
+.header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    font-family: var(--font-jost);
+}
+
+.title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.container {
+    position: relative;
+    z-index: 10;
+    gap: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.inputGroup {
+    font-family: var(--font-jost);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.input {
+    border: 2px solid #ffffff16;
+    background-color: #ffffff22;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    color: rgba(255, 255, 255, 0.847);
+    width: 100%;
+    text-align: start;
+    outline: none;
+    transition: box-shadow 0.2s;
+}
+
+.labelWithImage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.8;
+}
+
+.iconLabel {
+    width: 32px;
+}
+
+.inputColumn {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 14px;
+}
+</file>
+
+<file path="docker-compose.yml">
+services:
+  central-automacoes-app:
+    # Nome do serviço
+    container_name: central-automacoes-app
+    # Indica que a imagem deve ser construída a partir do Dockerfile no diretório atual:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Mapeamento de portas: 3003 da máquina host para 3003 do container
+    # A porta 3003 é a porta fixa definida para o serviço.
+    ports:
+      - "3003:3003"
+    # Reinicia o container se ele falhar
+    restart: always
+    # Carrega variáveis de ambiente do arquivo .env (local)
+    env_file:
+      - .env.local
+</file>
+
+<file path="Dockerfile">
+# --- STAGE 1: BUILD ---
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Cache de dependências
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY . .
+
+# Desabilita telemetria durante o build
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# IMPORTANTE: Para usar o standalone, seu next.config.js 
+# deve ter: output: 'standalone'
+RUN npm run build
+
+# --- STAGE 2: RUNTIME ---
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV PORT 3003
+
+# Criar usuário de sistema para segurança
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Ajuste para a pasta public: Copia apenas se existir
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/.next/static ./.next/static
+
+# Truque para copiar a pasta public apenas se ela existir no builder
+# Isso evita o erro "file does not exist" que quebrou seu deploy
+RUN if [ -d /app/public ]; then cp -r /app/public ./public; fi
+
+# Copia o output standalone (requer a config no next.config.js)
+# Isso já inclui os node_modules necessários, você não precisa copiar a pasta toda
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+USER nextjs
+
+EXPOSE 3003
+
+# No modo standalone, rodamos o server.js diretamente com node, é muito mais rápido
+CMD ["node", "server.js"]
+</file>
+
+<file path="eslint.config.mjs">
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+const eslintConfig = [
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+    ],
+  },
+];
+
+export default eslintConfig;
+</file>
+
+<file path="postcss.config.mjs">
+const config = {
+  plugins: ["@tailwindcss/postcss"],
+};
+
+export default config;
+</file>
+
+<file path="public/key.svg">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M27.0713 4.92874C25.4829 3.33812 23.4049 2.32908 21.1726 2.06443C18.9403 1.79979 16.684 2.29497 14.7677 3.47009C12.8514 4.6452 11.3869 6.43169 10.6106 8.54129C9.83424 10.6509 9.79133 12.9605 10.4888 15.0975L3.58626 22C3.39973 22.185 3.25185 22.4053 3.15121 22.648C3.05057 22.8907 2.99917 23.151 3.00001 23.4137V27C3.00001 27.5304 3.21072 28.0391 3.5858 28.4142C3.96087 28.7893 4.46958 29 5.00001 29H9.00001C9.26523 29 9.51958 28.8946 9.70712 28.7071C9.89465 28.5196 10 28.2652 10 28V26H12C12.2652 26 12.5196 25.8946 12.7071 25.7071C12.8947 25.5196 13 25.2652 13 25V23H15C15.1314 23.0001 15.2615 22.9743 15.3829 22.9241C15.5043 22.8739 15.6146 22.8003 15.7075 22.7075L16.9025 21.5112C17.9028 21.8366 18.9482 22.0015 20 22H20.0125C21.9893 21.9976 23.9211 21.4094 25.5637 20.3096C27.2063 19.2098 28.4862 17.6479 29.2415 15.8211C29.9969 13.9943 30.1939 11.9846 29.8076 10.0459C29.4213 8.10723 28.4691 6.32651 27.0713 4.92874ZM28 12.2625C27.8638 16.5237 24.2813 19.995 20.0138 20H20C18.9877 20.0017 17.9844 19.8104 17.0438 19.4362C16.8598 19.3564 16.656 19.3337 16.4589 19.3712C16.2619 19.4086 16.0806 19.5044 15.9388 19.6462L14.5863 21H12C11.7348 21 11.4804 21.1053 11.2929 21.2929C11.1054 21.4804 11 21.7348 11 22V24H9.00001C8.73479 24 8.48044 24.1053 8.2929 24.2929C8.10537 24.4804 8.00001 24.7348 8.00001 25V27H5.00001V23.4137L12.3538 16.0612C12.4955 15.9194 12.5914 15.7381 12.6288 15.5411C12.6663 15.344 12.6436 15.1402 12.5638 14.9562C12.1884 14.0125 11.9971 13.0056 12 11.99C12 7.72249 15.4763 4.13999 19.7375 4.00374C20.8321 3.96721 21.9225 4.15582 22.9413 4.55788C23.96 4.95995 24.8853 5.5669 25.6599 6.34115C26.4345 7.1154 27.0419 8.04044 27.4444 9.05899C27.8469 10.0775 28.036 11.1679 28 12.2625ZM24 9.49999C24 9.79666 23.912 10.0867 23.7472 10.3333C23.5824 10.58 23.3481 10.7723 23.074 10.8858C22.7999 10.9993 22.4983 11.029 22.2074 10.9712C21.9164 10.9133 21.6491 10.7704 21.4394 10.5606C21.2296 10.3509 21.0867 10.0836 21.0288 9.79262C20.971 9.50165 21.0007 9.20005 21.1142 8.92596C21.2277 8.65187 21.42 8.41761 21.6667 8.25278C21.9133 8.08796 22.2033 7.99999 22.5 7.99999C22.8978 7.99999 23.2794 8.15802 23.5607 8.43933C23.842 8.72063 24 9.10216 24 9.49999Z" fill="white" fill-opacity="0.6"/>
+</svg>
+</file>
+
+<file path="public/logo.svg">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M23.4474 18.105L19.4474 16.105C19.29 16.0265 19.1146 15.991 18.939 16.002C18.7634 16.0129 18.5939 16.07 18.4474 16.1675L16.6112 17.3925C15.7682 16.9291 15.0745 16.2354 14.6112 15.3925L15.8362 13.5562C15.9336 13.4098 15.9907 13.2402 16.0017 13.0646C16.0127 12.8891 15.9771 12.7137 15.8987 12.5562L13.8987 8.55625C13.8158 8.38884 13.6876 8.248 13.5288 8.14968C13.3699 8.05137 13.1867 7.99952 12.9999 8C11.6738 8 10.4021 8.52678 9.46437 9.46447C8.52669 10.4021 7.99991 11.6739 7.99991 13C8.00322 15.9164 9.1632 18.7123 11.2254 20.7745C13.2876 22.8367 16.0835 23.9967 18.9999 24C19.6565 24 20.3067 23.8707 20.9133 23.6194C21.52 23.3681 22.0711 22.9998 22.5354 22.5355C22.9997 22.0712 23.368 21.52 23.6193 20.9134C23.8706 20.3068 23.9999 19.6566 23.9999 19C24 18.8142 23.9484 18.6321 23.8508 18.474C23.7532 18.3159 23.6135 18.1881 23.4474 18.105ZM18.9999 22C16.6138 21.9974 14.3261 21.0483 12.6389 19.361C10.9516 17.6738 10.0026 15.3861 9.99991 13C9.99971 12.3064 10.2399 11.6342 10.6795 11.0977C11.1191 10.5612 11.731 10.1936 12.4112 10.0575L13.8462 12.9325L12.6249 14.75C12.5336 14.8869 12.4776 15.0442 12.4617 15.2079C12.4457 15.3717 12.4705 15.5368 12.5337 15.6888C13.2491 17.3892 14.6019 18.742 16.3024 19.4575C16.4548 19.5235 16.6212 19.5505 16.7866 19.5361C16.952 19.5217 17.1112 19.4663 17.2499 19.375L19.0762 18.1575L21.9512 19.5925C21.814 20.2734 21.4448 20.8856 20.9066 21.3247C20.3684 21.7637 19.6945 22.0024 18.9999 22ZM15.9999 3C13.7555 2.99951 11.5492 3.58011 9.59572 4.68529C7.64227 5.79046 6.00822 7.38256 4.85262 9.30662C3.69703 11.2307 3.05926 13.4212 3.00139 15.6648C2.94353 17.9085 3.46753 20.1289 4.52241 22.11L3.10366 26.3662C2.98614 26.7186 2.96908 27.0968 3.05441 27.4583C3.13973 27.8199 3.32405 28.1505 3.58672 28.4132C3.84939 28.6759 4.18003 28.8602 4.54157 28.9455C4.90311 29.0308 5.28127 29.0138 5.63366 28.8962L9.88991 27.4775C11.6334 28.4048 13.5652 28.9228 15.5387 28.992C17.5122 29.0613 19.4756 28.68 21.2797 27.8772C23.0839 27.0743 24.6815 25.871 25.9512 24.3586C27.2209 22.8462 28.1293 21.0644 28.6076 19.1484C29.0858 17.2325 29.1213 15.2328 28.7113 13.301C28.3013 11.3693 27.4567 9.55642 26.2414 7.9999C25.0262 6.44337 23.4723 5.18415 21.6978 4.31782C19.9232 3.45149 17.9746 3.00081 15.9999 3ZM15.9999 27C14.0661 27.0013 12.1663 26.4921 10.4924 25.5238C10.3699 25.4527 10.2336 25.4085 10.0927 25.394C9.95172 25.3796 9.80933 25.3953 9.67491 25.44L4.99991 27L6.55866 22.325C6.60359 22.1907 6.61947 22.0483 6.60525 21.9074C6.59103 21.7665 6.54702 21.6301 6.47616 21.5075C5.26362 19.4111 4.77679 16.9732 5.09119 14.572C5.40559 12.1707 6.50365 9.94027 8.21502 8.22674C9.92639 6.51321 12.1554 5.41234 14.5563 5.0949C16.9572 4.77747 19.3957 5.26122 21.4936 6.47111C23.5915 7.68099 25.2314 9.54939 26.1591 11.7864C27.0868 14.0235 27.2503 16.5042 26.6242 18.8436C25.9981 21.1831 24.6176 23.2505 22.6966 24.7253C20.7756 26.2 18.4217 26.9996 15.9999 27Z" fill="white" fill-opacity="0.6"/>
+</svg>
+</file>
+
+<file path="README.md">
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+</file>
+
+<file path="app/api/connect/route.ts">
+import { NextResponse } from 'next/server';
+import axios, { AxiosError } from 'axios';
+import { agents } from '@/lib/agents';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
+
+export async function POST(req: Request) {
+  try {
+    const { key, number } = await req.json();
+
+    if (!key)
+      return NextResponse.json({ errorMessage: 'Key obrigatória' }, { status: 400 });
+
+    const agent = agents.find(a => a.key === key);
+    if (!agent)
+      return NextResponse.json({ errorMessage: 'Key inválida, consulte nosso suporte' }, { status: 401 });
+
+
+    // Verificar se a instância já existe na Evolution API
+    try {
+      const instanceResponse = await axios.get(
+        `${process.env.CREATE_CONNECTION_ENDPOINT}instance/fetchInstances?instanceName=${agent.key}`,
+        { headers: { apikey: process.env.EVOLUTION_API_KEY } }
+      );
+
+      // Verifica se a resposta contém dados da instância
+      if (instanceResponse.data) {
+        const connectionStatus = instanceResponse.data.connectionStatus;
+
+        if (connectionStatus === 'open') {
+          return NextResponse.json({ 
+            message: 'Instância já está conectada e ativa na Evolution API.' 
+          }, { status: 200 });
+        } else {
+          // Instância existe mas não está aberta, tenta deletar
+          try {
+            await axios.delete(
+              `${process.env.CREATE_CONNECTION_ENDPOINT}instance/delete/${agent.key}`,
+              { headers: { apikey: process.env.EVOLUTION_API_KEY } }
+            );
+          } catch {
+            // Continua o fluxo mesmo se não conseguir deletar
+          }
+        }
+      }
+    } catch {
+     
+    }
+
+    // Verificar no Supabase se já existe um registro com essa key
+    const { data: existingRecord } = await supabase
+      .from('connection_state')
+      .select('*')
+      .eq('key', key)
+      .single();
+
+    if (existingRecord) {
+      if (existingRecord.connected) {
+        return NextResponse.json({
+          message: 'Esta key já está conectada e ativa.'
+        }, { status: 200 });
+      } else {
+        // Se existe mas não está conectado, apaga o registro
+        const { error: deleteError } = await supabase
+          .from('connection_state')
+          .delete()
+          .eq('key', key);
+
+        if (deleteError) {
+          return NextResponse.json({
+            errorMessage: 'Erro interno do servidor'
+          }, { status: 500 });
+        }
+      }
+    }
+
+    // Validação e formatação do número
+    let formattedNumber = '';
+    let evolutionUrl = `${process.env.CREATE_CONNECTION_ENDPOINT}instance/create`;
+
+    if (number && number.trim() !== '') {
+      // Valida formato do número (deve ser exatamente 11 dígitos: 64992434104)
+      const numberRegex = /^\d{11}$/;
+      if (!numberRegex.test(number.trim())) {
+        return NextResponse.json({
+          errorMessage: 'Número inválido. Use o formato: 64992434104 (área + número sem espaços ou caracteres especiais)'
+        }, { status: 400 });
+      }
+
+      // Adiciona o prefixo 55 (Brasil)
+      formattedNumber = `55${number.trim()}`;
+      evolutionUrl += `?number=${formattedNumber}`;
+    }
+
+    // Chama a API do Evolution
+    const response = await axios.post(
+      evolutionUrl,
+      {
+        instanceName: agent.key,
+        qrcode: true,
+        groupsIgnore: true,
+        integration: 'WHATSAPP-BAILEYS',
+        webhook: {
+          url: agent.webhook,
+          events: [
+            'CONNECTION_UPDATE',
+            'MESSAGES_UPSERT',
+            'SEND_MESSAGE',
+            'CHATS_UPSERT',
+            'MESSAGES_DELETE',
+          ],
+        },
+      },
+      { headers: { apikey: process.env.EVOLUTION_API_KEY } }
+    );
+
+    const qrcode = response.data?.qrcode?.base64;
+    const pairingCode = response.data?.qrcode?.pairingCode;
+    const evolutionKey = response.data?.instance.instanceName;
+
+    if (!qrcode) {
+      return NextResponse.json(
+        { errorMessage: 'A API não retornou o QR Code esperado.' },
+        { status: 502 }
+      );
+    }
+
+    // Monta a resposta baseada no que foi enviado
+    const responseData: { message: string; qrcode: string; pairingCode?: string; evolutionKey?: string } = {
+      message: 'Instância criada com sucesso, agora escaneie o QR Code!',
+      qrcode,
+      evolutionKey
+    };
+
+    // Se foi enviado número e existe pairingCode, inclui na resposta
+    if (formattedNumber && pairingCode) {
+      responseData.pairingCode = pairingCode;
+      responseData.message = `Instância criada para o número ${formattedNumber}. Use o código de pareamento ou escaneie o QR Code.`;
+    }
+
+    return NextResponse.json(responseData);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      type ErrorResponse = { message?: string };
+      const error = err as AxiosError<ErrorResponse>;
+      const status = error.response?.status || 500;
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        'Erro ao comunicar com a API Evolution';
+
+      return NextResponse.json(
+        { message: `Erro Evolution: ${message}` },
+        { status }
+      );
+    }
+
+    return NextResponse.json({ message: 'Erro interno do servidor' }, { status: 500 });
+  }
+}
+</file>
+
+<file path="app/globals.css">
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-jost: var(--font-jost);
+  --font-k2d: var(--font-k2d);
+}
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  output: 'standalone',
+};
+
+export default nextConfig;
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+import { Jost, K2D } from "next/font/google";
+import "./globals.css";
+import { Toaster } from 'react-hot-toast';
+
+const jost = Jost({
+  variable: "--font-jost",
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+});
+
+const k2d = K2D({
+  variable: "--font-k2d",
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+});
+
+export const metadata: Metadata = {
+  title: "NKW - Central de Conexão WhatsApp",
+  description: "Conecte seu WhatsApp ao sistemas de automação com facilidade",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pt-br">
+      <head>
+        <link rel="icon" href="/rel.webp" />
+      </head>
+      <body
+        className={`${jost.variable} ${k2d.variable} antialiased`}
+      >
+        {children}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              style: {
+                background: '#22c55e',
+                color: '#fff',
+              },
+            },
+            error: {
+              style: {
+                background: '#ef4444',
+                color: '#fff',
+              },
+            },
+          }}
+        />
+      </body>
+    </html>
+  );
+}
+</file>
+
+<file path="app/api/webhook/route.ts">
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
+
+export async function POST(req: Request) {
+  // Verificar header internalKey
+  const internalKey = req.headers.get('internalKey');
+  if (!internalKey || internalKey !== process.env.INTERNAL_KEY) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Invalid internal key' }, 
+      { status: 401 }
+    );
+  }
+
+  const data = await req.json();
+
+  let message: string = 'Aguardando conexão ...';
+  let connected = false;
+
+  if (data.event === 'connection.update' && data.data === 'sucesso') {
+    connected = true;
+    message = 'Conectado com sucesso';
+  } else if (data.event === 'error.authorized') {
+    connected = false;
+    message = 'Erro de autorização';
+  }
+
+  const { error } = await supabase
+    .from('connection_state')
+    .upsert({ key: data.key, connected, message });
+
+  if (error) {
+    return NextResponse.json({ status: 'error' }, { status: 500 });
+  }
+
+  return NextResponse.json({ status: 'ok' });
+}
+
+// ================== DELETE ==================
+export async function DELETE(req: Request) {
+  try {
+    const { key } = await req.json();
+
+    if (!key) {
+      return NextResponse.json(
+        { message: 'Key obrigatória para deletar conexão' },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase
+      .from('connection_state')
+      .delete()
+      .eq('key', key);
+
+    if (error) {
+      return NextResponse.json({ message: 'Erro ao deletar conexão' }, { status: 500 });
+    }
+
+    return NextResponse.json({ message: 'Conexão deletada com sucesso' });
+  } catch  {
+    return NextResponse.json({ message: 'Erro interno do servidor' }, { status: 500 });
+  }
+}
+</file>
+
+<file path="lib/agents.ts">
+export const agents = [
+  {
+    key: process.env.AGENT_KEY!,
+    webhook: process.env.AGENT_WEBHOOK!,
+  }
+];
+</file>
+
+<file path="package.json">
+{
+  "name": "whatsapp-connector",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 4000",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.75.0",
+    "@upstash/redis": "^1.35.5",
+    "axios": "^1.12.2",
+    "css-modules": "^0.3.0",
+    "next": "15.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-hot-toast": "^2.6.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="app/page.tsx">
+'use client'
+
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import style from './page.module.css'
+import { toast } from 'react-hot-toast'
+
+export default function HomePage() {
+  const [number, setNumber] = useState('')
+  const [key, setKey] = useState('')
+  const [evolutionKey, setEvolutionKey] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [qrCode, setQrCode] = useState<string | null>(null)
+  const [pairingCode, setPairingCode] = useState<string | null>(null)
+  const [showQrSection, setShowQrSection] = useState(false)
+  const [connected, setConnected] = useState(false)
+
+  // Componente Spinner / 
+  const Spinner = () => (
+    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+  )
+
+  useEffect(() => {
+    if (!evolutionKey) return;
+
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/events?key=${evolutionKey}`);
+      const data = await res.json();
+
+      if (!data) return;
+
+      if (data.connected) {
+        setConnected(true);
+        setQrCode(null);
+        setShowQrSection(false);
+        toast.success('Conectado com sucesso!');
+
+        clearInterval(interval);
+      }
+    }, 3000);
+
+    // Limpeza ao desmontar o componente
+    return () => clearInterval(interval);
+  }, [evolutionKey]);
+
+
+  const handleConnect = async () => {
+
+    if (!key || key.length <= 10) return
+
+    setLoading(true)
+
+    try {
+
+      const res = await fetch('/api/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, number: number || undefined }),
+      })
+
+      const data = await res.json()
+
+      // Verifica se é uma resposta de erro
+      if (data.errorMessage) {
+        toast.error(data.errorMessage)
+        return
+      }
+
+      // Resposta de sucesso
+      if (data.message) {
+        toast.success(data.message)
+      }
+
+      if (data.qrcode) {
+        setEvolutionKey(data.evolutionKey)
+        setQrCode(data.qrcode)
+        setShowQrSection(true)
+      }
+
+      if (data.pairingCode) {
+        setPairingCode(data.pairingCode)
+      }
+
+    } catch (e: unknown) {
+      setQrCode(null)
+      setPairingCode(null)
+      setShowQrSection(false)
+      if (e && typeof e === 'object' && 'message' in e) {
+        toast.error('Erro na conexão: ' + (e as { message: string }).message)
+      } else {
+        toast.error('Erro na conexão.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && key.length > 10) {
+      handleConnect()
+    }
+  }
+
+  return (
+    <main
+      className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{
+        backgroundImage: "url('/bg.png')",
+        padding: '0 20px',
+      }}
+    >
+
+      {/* Conteúdo da página */}
+      <div className={style.container}>
+
+        <div className={style.header}>
+          <div>
+            <Image
+              src="/logo.png"
+              alt="Logo Central Automações"
+              width={200}
+              height={100}
+              className="mx-auto"
+            />
+          </div>
+          <div className={style.title}>
+            <p className="text-white drop-shadow-lg">
+              Insira sua key de agente (mín. 10 caracteres). O número é opcional e permite conexão via código no WhatsApp.
+            </p>
+          </div>
+        </div>
+
+        {/* Botão de status conectado */}
+        {connected && (
+          <div className="mt-4 px-6 py-3 bg-green-500 text-white rounded-lg shadow-lg">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+              <span className="font-medium">WhatsApp Conectado com Sucesso!</span>
+            </div>
+          </div>
+        )}
+
+        {/* Inputs lado a lado com labels - ocultos quando QR está visível ou conectado */}
+        {!showQrSection && !connected && (
+          <div className={style.inputGroup}>
+          <div className={style.inputColumn}>
+            <div className={style.labelWithImage}>
+              <Image
+                src="/key.svg"
+                alt="Logo Central Automações"
+                width={100}
+                height={50}
+                className={style.iconLabel}
+              />
+              <label className="text-white text-sm drop-shadow-lg">Key do Agente:</label>
+            </div>
+
+            <input
+              type="text"
+              value={key}
+              onChange={e => setKey(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Digite sua key..."
+              className={style.input}
+            />
+          </div>
+
+          <div className={style.inputColumn}>
+            <div className={style.labelWithImage}>
+              <Image
+                src="/logo.svg"
+                alt="Logo Central Automações"
+                width={100}
+                height={50}
+                className={style.iconLabel}
+              />
+              <label className="text-white text-sm drop-shadow-lg">Número WhatsApp (Opcional):</label>
+            </div>
+
+            <input
+              type="text"
+              value={number}
+              onChange={e => setNumber(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="64999887766 ( Área + Número )"
+              className={style.input}
+            />
+            <p className="text-white text-xs mt-1 drop-shadow-lg">
+              Formato: código da área + número.
+            </p>
+          </div>
+        </div>
+        )}
+
+        {showQrSection && qrCode && (
+          <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
+            <p className="text-gray-700 text-sm mb-2 text-center">
+              Escaneie o QR Code com o WhatsApp:
+            </p>
+            <Image
+              src={qrCode}
+              alt="QR Code WhatsApp"
+              width={200}
+              height={200}
+              className="mx-auto border rounded"
+            />
+            {pairingCode && (
+              <div className="mt-3 p-3 bg-gray-50 rounded">
+                <p className="text-gray-700 text-sm text-center font-medium mb-1">
+                  Código de Pareamento:
+                </p>
+                <p className="text-center text-lg font-mono font-bold text-blue-600">
+                  {pairingCode}
+                </p>
+                <p className="text-gray-600 text-xs mt-1 text-center">
+                  Digite este código no WhatsApp
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!showQrSection && !connected && (
+          <button
+            onClick={handleConnect}
+            disabled={!key || key.length <= 10 || loading}
+            className={`${key.length > 10 && !loading ? style.submitActive : style.submit}`}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Spinner />
+                <span>Conectando...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <span>Conectar</span>
+                <Image src="/arrow.webp" className={style.iconSubmit} alt="Seta" width={16} height={16} />
+              </div>
+            )}
+          </button>
+        )}
+      </div>
+    </main>
+  )
+}
+</file>
+
+</files>
