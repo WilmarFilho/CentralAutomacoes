@@ -1,0 +1,39 @@
+name: Deploy Central Automacoes
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # 1. Entrar na pasta do projeto
+            mkdir -p ~/CentralAutomacoes
+            cd ~/CentralAutomacoes
+            
+            # 2. Sincronizar com o commit atual
+            if [ ! -d ".git" ]; then
+              echo "Repositório não encontrado localmente. Clonando..."
+              find . -mindepth 1 -delete
+              git clone https://github.com/WilmarFilho/CentralAutomacoes.git .
+            else
+              echo "Sincronizando repositório existente..."
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            # 3. Docker Compose (Sempre com hífen conforme solicitado)
+            # Nota: Certifique-se de ter o Alias ou a versão V1 instalada na VPS
+            docker-compose down
+            docker-compose up -d --build
+
+            # 4. Limpeza de imagens antigas para poupar espaço
+            docker image prune -f
