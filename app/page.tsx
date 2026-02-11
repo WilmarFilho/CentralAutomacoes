@@ -20,28 +20,30 @@ export default function HomePage() {
     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
   )
 
-  useEffect(() => {
-    if (!evolutionKey) return;
+ // Substitua seu useEffect por este:
+useEffect(() => {
+  if (!evolutionKey || connected) return;
 
-    const interval = setInterval(async () => {
+  const checkStatus = async () => {
+    try {
       const res = await fetch(`/api/events?key=${evolutionKey}`);
       const data = await res.json();
 
-      if (!data) return;
-
-      if (data.connected) {
+      if (data?.connected) {
         setConnected(true);
         setQrCode(null);
         setShowQrSection(false);
         toast.success('Conectado com sucesso!');
-
-        clearInterval(interval);
       }
-    }, 3000);
+    } catch (e) {
+      console.error("Erro ao checar status");
+    }
+  };
 
-    // Limpeza ao desmontar o componente
-    return () => clearInterval(interval);
-  }, [evolutionKey]);
+  // Roda uma vez e depois a cada 5 segundos (mais leve)
+  const interval = setInterval(checkStatus, 5000); 
+  return () => clearInterval(interval);
+}, [evolutionKey, connected]);
 
 
   const handleConnect = async () => {
